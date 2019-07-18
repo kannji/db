@@ -28,27 +28,23 @@ class Edge(Base):
 
     __tablename__ = 'edge'
 
-    uuid = Column(UUID(as_uuid=True), primary_key=True, nullable=False)
+    uuid = Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     type = Column(EnumColumn(EdgeTypes))
 
-    source_node = Column(UUID(as_uuid=True), ForeignKey('node.uuid'), primary_key=True)
-    target_node = Column(UUID(as_uuid=True), ForeignKey('node.uuid'), primary_key=True)
+    source_uuid = Column(UUID(as_uuid=True), ForeignKey('node.uuid'), primary_key=True)
+    target_uuid = Column(UUID(as_uuid=True), ForeignKey('node.uuid'), primary_key=True)
 
-    source = relationship("Node", back_populates="targets")
-    target = relationship("Node", back_populates="sources")
-
+    source = relationship("Node", foreign_keys=[source_uuid], backref="outgoing_edges")
+    target = relationship("Node", foreign_keys=[target_uuid], backref="incoming_edges")
 
 class Node(Base):
 
     __tablename__ = 'node'
 
-    uuid = Column(UUID(as_uuid=True), primary_key=True, nullable=False)
+    uuid = Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    content = Column(String)
-
-    sources = relationship("Edge", back_populates="target")
-    targets = relationship("Edge", back_populates="source")
+    content = Column(String, unique=True, nullable=False)
 
