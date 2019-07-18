@@ -12,7 +12,7 @@ services:
       interval: 15s
       timeout: 3s
       retries: 8
-    image: postgres:11.2-alpine
+    image: postgres:11.4-alpine
     networks:
       - db
     volumes:
