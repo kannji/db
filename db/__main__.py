@@ -15,39 +15,24 @@ Base.metadata.create_all(db_engine)
 SessionFactory = sessionmaker(bind=db_engine)
 session = SessionFactory()
 
-def xpathGetInt(element, path):
-    if not path.endswith('text()') and path.endswith('/'):
-        path += 'text()'
-    else:
-        path += '/text()'
+def getReadingFromEntry(entry):
+    return entry.xpath("r_ele/reb/text()")[0]
 
-    result = element.xpath(path)
-    if result:
-        return int(result[0])
-    else:
-        return None
+def getWritingFromEntry(entry):
+    writing = entry.xpath("k_ele/keb/text()")
 
-
-def xpathGetStr(element, path):
-    if not path.endswith('text()') and path.endswith('/'):
-        path += 'text()'
+    if writing:
+        return writing[0]
     else:
-        path += '/text()'
-
-    result = element.xpath(path)
-    if result:
-        return result[0]
-    else:
-        return None
+        return getReadingFromEntry(entry)
 
 def addWritings():
 
     # Get a set of writings from the JMdict
     jmdict_writings = set()
-    for event, word in etree.iterparse("./db/JMdict_e.xml", tag="entry"):
-        writing = xpathGetStr(word, "k_ele[not(ke_inf/text()='&oK;')]/keb")
-        if writing is not None:
-            jmdict_writings.add(writing)
+    for _event, entry in etree.iterparse("./db/JMdict_e.xml", tag="entry"):
+        writing = getWritingFromEntry(entry)
+        jmdict_writings.add(writing)
 
     print(len(jmdict_writings))
 
@@ -67,14 +52,15 @@ def addWritings():
     print(len(new_writings))
 
     # Add the writings, and mark them as such with an Edge
-    insert = []
-    for writing in new_writings:
-        new_node = Node(uuid=uuid.uuid4(), content=writing)
-        new_edge = Edge(source_uuid=new_node.uuid, target_uuid=new_node.uuid, type=EdgeTypes.writing)
-        insert.append(new_node)
-        insert.append(new_edge)
-    session.bulk_save_objects(insert)
-    session.commit()
+    if len(new_writings) > 0:
+        insert = []
+        for writing in new_writings:
+            new_node = Node(uuid=uuid.uuid4(), content=writing)
+            new_edge = Edge(source_uuid=new_node.uuid, target_uuid=new_node.uuid, type=EdgeTypes.writing)
+            insert.append(new_node)
+            insert.append(new_edge)
+        session.bulk_save_objects(insert)
+        session.commit()
 
 addWritings()
 
