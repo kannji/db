@@ -40,6 +40,14 @@ def getWritingSetFromJMdict():
 
     return writings
 
+def getReadingSetFromJMdict():
+    readings = set()
+    for _event, entry in etree.iterparse("./db/JMdict_e.xml", tag="entry"):
+        reading = getReadingFromEntry(entry)
+        readings.add(reading)
+
+    return readings
+
 def getContentSet(node_set):
     return set([n.content for n in node_set])
 
@@ -91,12 +99,49 @@ def addWritingEdgesForWritingSet(jmdict_writings):
     session.commit()
     logger.info(str(len(untyped_writings)) + " edges added to the database.")
 
-
 def addWritings():
     jmdict_writings = getWritingSetFromJMdict()
-    logger.info(str(len(jmdict_writings)) + " writings found in JMdict.")
+    logger.info(str(len(jmdict_writings)) + " distinct writings found in JMdict.")
 
     addWritingNodesForWritingSet(jmdict_writings)
     addWritingEdgesForWritingSet(jmdict_writings)
 
+def addReadingNodesForWritingSet(jmdict_readings):
+    session = SessionFactory()
+
+    existing_readings = getContentSet(getMatchingNodes(session, jmdict_readings))
+    logger.info(str(len(existing_readings)) + " nodes with matching content already existing in database.")
+
+    missing_readings = jmdict_readings - existing_readings
+
+    if missing_readings:
+        addNodes(session, missing_readings)
+
+    session.commit()
+    logger.info(str(len(missing_readings)) + " nodes added to the database.")
+
+def addReadingEdgesForWritingSet(jmdict_readings):
+    session = SessionFactory()
+
+    typed_readings = getContentSet(getMatchingNodesOfType(session, jmdict_readings, EdgeTypes.reading))
+    logger.info(str(len(typed_readings)) +
+                " readings with Edge of type `reading` found in the database.")
+
+    untyped_readings = jmdict_readings - typed_readings
+
+    if untyped_readings:
+        untyped_nodes = getMatchingNodes(session, untyped_readings)
+        addReflexiveEdges(session, untyped_nodes, EdgeTypes.reading)
+
+    session.commit()
+    logger.info(str(len(untyped_readings)) + " edges added to the database.")
+
+def addReadings():
+    jmdict_readings = getReadingSetFromJMdict()
+    logger.info(str(len(jmdict_readings)) + " distinct readings found in JMdict.")
+
+    addReadingNodesForWritingSet(jmdict_readings)
+    addReadingEdgesForWritingSet(jmdict_readings)
+
 addWritings()
+addReadings()

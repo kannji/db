@@ -23,6 +23,7 @@ Base = declarative_base()
 
 class EdgeTypes(Enum):
     writing = 1
+    reading = 2
 
 class Edge(Base):
 
