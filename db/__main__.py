@@ -1,12 +1,12 @@
 import uuid
 import logging
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from arango import ArangoClient
+from arango_orm import Database
 
 from lxml import etree
 
-from .Base import Base, dbURL, Node, Edge, EdgeTypes
+from .Base import dbHostURL
 
 
 logging.basicConfig()
@@ -14,12 +14,10 @@ logging.getLogger().setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-db_engine = create_engine(dbURL)
+client = ArangoClient( hosts=dbHostURL )
+kannji_db = client.db( 'kannji' )
 
-Base.metadata.create_all(db_engine)
-
-SessionFactory = sessionmaker(bind=db_engine)
-
+db = Database( kannji_db )
 
 def getReadingFromEntry(entry):
     return entry.xpath("r_ele/reb/text()")[0]
@@ -143,5 +141,5 @@ def addReadings():
     addReadingNodesForWritingSet(jmdict_readings)
     addReadingEdgesForWritingSet(jmdict_readings)
 
-addWritings()
-addReadings()
+# addWritings()
+# addReadings()

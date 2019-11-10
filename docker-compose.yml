@@ -4,34 +4,22 @@ services:
 
   db:
     environment:
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${DB_USER}", "-d", "${DB_NAME}"]
-      interval: 15s
-      timeout: 3s
-      retries: 8
-    image: postgres:11.4-alpine
+      - ARANGO_NO_AUTH=1
+      - ARANGO_STORAGE_ENGINE=rocksdb
+    image: arangodb:3.5.2
     networks:
       - db
     ports:
-      - "5432:5432"
+      - "8529:8529"
     volumes:
-      - db:/var/lib/postgresql/data/
+      - /var/lib/arangodb3
 
   python:
     build:
       context: .
     command: ["-m", "db"]
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
       - DEBUG
-      - DB_NAME
-      - DB_USER
-      - DB_PASSWORD
     networks:
       - db
     volumes:
